@@ -12,6 +12,8 @@ def writef(data:dict):
     a = sqlite3.connect(f'{file_path}')
     b = a.cursor()
     number = list(data.keys())[0]
+    sql = f'delete from imojimix where number = ?'
+    b.execute(sql,(f'{number}',))
     b.execute(f'''insert into imojimix (number,name,status,img_url,url) values('{number}','{data[number]["name"]}','{data[number]["status"]}','{data[number]["img_url"]}','{data[number]["url"]}')''')
     b.close()
     a.commit()
@@ -45,7 +47,7 @@ while True:
         a:dict = json.load(f)
     left = a['cnt'][0] + 1
     right = a['cnt'][1] + 1
-    print(left,right)
+    print(left-1,right-1)
     cnt = False
     last_img = ''
     count = 0
@@ -61,55 +63,73 @@ while True:
     # content = {}
     # driver.find_element_by_xpath(f'//div[@id="slider1"]/div[2]').click()
     # driver.find_element_by_xpath(f'//div[@id="slider2"]/div[157]').click()
-    for i in range(left,224):
-        driver.find_element_by_xpath(f'//div[@id="slider1"]/div[{i}]').click()
-        time.sleep(1)
-        if not cnt:
-            k = right
-            cnt = True
+    # for i in range(left,22):
+    #     driver.find_element_by_xpath(f'//div[@id="slider1"]/div[{i}]').click()
+    #     time.sleep(1)
+    #     if not cnt:
+    #         k = right
+    #         cnt = True
+    #     else:
+    #         k = i
+    #     for j in range(k,224):
+    # if j < 101:
+    #     l = '0' + str(j-1)
+    # else:
+    #     l = str(j-1)
+    with open(f'study/pa_chong/count.json','r') as f:
+        content = json.load(f)
+    for key in content:
+        if key == 'cnt':
+            continue
         else:
-            k = i
-        for j in range(k,224):
-            print(f'//将读取第{i-1}-{j-1}个',end='')
-            driver.find_element_by_xpath(f'//div[@id="slider2"]/div[{j}]').click()
-            time.sleep(2)
-            url = driver.current_url
-            name = driver.current_url.split('/')[-1].replace('+','_') + '.png'
-            img_url = driver.find_element_by_id("output").get_attribute("src")
-            status = 1
-            if 'blob' in img_url:
-                status = 0
-                img_url = 'error'
+            i = int(content[key][0])
+            j = int(content[key][1])
+        print(f'//将读取第{i}-{j}个',end='')
+        time.sleep(1)
+        
+        driver.find_element_by_xpath(f'//div[@id="slider1"]/div[{i+1}]').click()
+        time.sleep(1)
+        driver.find_element_by_xpath(f'//div[@id="slider2"]/div[{j+1}]').click()
+        time.sleep(1)
+        url = driver.current_url
+        name = driver.current_url.split('/')[-1].replace('+','_') + '.png'
+        img_url = driver.find_element_by_id("output").get_attribute("src")
+        status = 1
+        if 'blob' in img_url:
+            status = 0
+            img_url = 'error'
 
-            # data = {f'{i-1}-{j-1}':{'name':name,'status':status,'img_url':img_url,'url':url}}
-            # with open(f'study/pa_chong/database.json','r') as f:
-            #     content:dict = json.load(f)
-            # with open(f'study/pa_chong/database.json','w') as f:
-            #     content.update(data)
-            #     json.dump(content,f)
-            
-            data = {f'{i-1}-{j-1}':{'name':name,'status':status,'img_url':img_url,'url':url}}
-            writef(data)
+        # data = {f'{i-1}-{j-1}':{'name':name,'status':status,'img_url':img_url,'url':url}}
+        # with open(f'study/pa_chong/database.json','r') as f:
+        #     content:dict = json.load(f)
+        # with open(f'study/pa_chong/database.json','w') as f:
+        #     content.update(data)
+        #     json.dump(content,f)
+        
+        data = {f'{i}-{j}':{'name':name,'status':status,'img_url':img_url,'url':url}}
+        writef(data)
 
-            downlouded = 222*221/2 - (222-i)*(222-i-1)/2 + j
-            allimg = 222*221/2
-            rate = round(downlouded / allimg * 100,2)
-            if status:
-                while True:
-                    try:
-                        img = requests.get(img_url)
-                        break
-                    except:
-                        pass
-                with open(f'study/pa_chong/img/{name}','wb') as f:
-                    f.write(img.content)
-                print(f' | \033[35msuccess\033[0m | \033[35m进度:{rate}%\033[0m | \033[94m链接:{img_url}')
-            else:
-                with open(f'study/pa_chong/img/{name}','w') as f:
-                    f.write(img_url)
-                print(f' | \033[91m error \033[0m | \033[35m进度:{rate}%\033[0m | \033[94m链接:{img_url}')
-            with open(f'study/pa_chong/count.json','w') as f:
-                json.dump({'cnt':[i-1,j-1]},f)
+        downlouded = 222*223/2 - (222-i+1)*(222-i+2)/2 + j - i
+        allimg = 222*223/2
+        rate = round(downlouded / allimg * 100,2)
+        rate2 = '#' * int(rate * 4 // 10) + str(int(rate * 4 % 10)) + ' ' * int(10 * 4 - int(rate * 4 // 10)-1)
+        rate = "%.2f" % (rate) + r'%'
+        if status:
+            while True:
+                try:
+                    img = requests.get(img_url)
+                    break
+                except:
+                    pass
+            with open(f'study/pa_chong/img/{name}','wb') as f:
+                f.write(img.content)
+            print(f' | \033[35msuccess\033[0m | \033[35m进度:{rate}\033[0m | \033[94m链接:{img_url}')
+        else:
+            with open(f'study/pa_chong/img/{name}','w') as f:
+                f.write(img_url)
+            print(f' | \033[91m error \033[0m | \033[35m进度:{rate}\033[0m | \033[94m链接:{img_url}')
+    # with open(f'study/pa_chong/count.json','w') as f:
+    #     json.dump({'cnt':[i-1,j-1]},f)
     # with open(f'img{start}-{end}.json','w',encoding='utf-8') as f:
     #     json.dump(content,f,ensure_ascii=False)
 
